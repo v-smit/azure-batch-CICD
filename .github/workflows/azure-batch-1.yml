@@ -32,11 +32,11 @@ jobs:
       - name: Using Env
         run: |
           echo "Deploying on the environment: ${{ steps.config_branch.outputs.env_name }}"
-      
+
   deploy:
     needs: [build]
     runs-on: ubuntu-latest
-    environment: ${{ steps.config_branch.outputs.env_name }}
+    environment: ${{ needs.build.outputs.my_env }}
 
     steps:
       - uses: actions/checkout@v3
