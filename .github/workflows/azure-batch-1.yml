@@ -1,0 +1,54 @@
+name: Azure Batch
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      my_env: ${{ steps.config_branch.outputs.env_name }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set deploy path and environment based on branch
+        id: config_branch
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "env_name=prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            echo "env_name=dev" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=Invalid" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Using Env
+        run: |
+          echo "Deploying on the environment: ${{ steps.config_branch.outputs.env_name }}"
+      
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: ${{ steps.config_branch.outputs.env_name }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Check ENV
+        run: |
+          echo "account name: ${{ secrets.ACCOUNT_NAME }}"
+
+      - name: Upload to blob storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload-batch --account-name ${{ secrets.ACCOUNT_NAME }} --account-key ${{ secrets.ACCOUNT_KEY }} -d 'cicd' -s 'azure-batch/' --overwrite 'true'
