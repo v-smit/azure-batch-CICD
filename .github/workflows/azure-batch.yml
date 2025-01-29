@@ -10,7 +10,6 @@ on:
         options:
         - prod
         - dev
-        - main
       branch:
         description: Branch from deploy
         required: true
